@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
+from torchvision.transforms import v2
 
 def train(model: nn.Module,
           train_dataset: torch.utils.data.Dataset,
@@ -31,10 +32,15 @@ def train(model: nn.Module,
                              batch_size=128, 
                              shuffle=True, 
                              num_workers=2)
+    
+    cutmix = v2.CutMix(num_classes=len(train_dataset.dataset.classes))
+    mixup = v2.MixUp(num_classes=len(train_dataset.dataset.classes))
+    cutmix_or_mixup = v2.RandomChoice([cutmix, mixup])
 
     for epoch in range(epochs):
         total_loss = 0.0
         for images, labels in trainloader:
+            images, labels = cutmix_or_mixup(images, labels)
             images = images.to(device)
             labels = labels.to(device)
 

@@ -35,7 +35,7 @@ def skfold(model: nn.Module,
           seed: int,
           train_transform=None,
           val_transform=None,
-          scheduler=False):
+          scheduler=None):
     """
     Trains and evaluates a model using k-fold cross-validation.
 
@@ -62,11 +62,9 @@ def skfold(model: nn.Module,
     for fold, (train_idx, val_idx) in enumerate(skfold.split(np.zeros(len(labels)), labels)):
         print(f"Fold {fold + 1}")
 
-        # Create separate dataset instances for training and validation
         train_full_dataset = BUSI('./data', transform=train_transform)
         val_full_dataset = BUSI('./data', transform=val_transform)
 
-        # Create subsets using the indices
         train_dataset = Subset(dataset=train_full_dataset, indices=train_idx)
         val_dataset = Subset(dataset=val_full_dataset, indices=val_idx)
 
