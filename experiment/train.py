@@ -8,7 +8,8 @@ def train(model: nn.Module,
           criterion: nn.Module,
           optimizer: torch.optim.Optimizer,
           epochs: int,
-          device: torch.device) -> tuple[nn.Module, float]:
+          device: torch.device,
+          scheduler=None) -> tuple[nn.Module, float]:
     """
     Trains a model on the dataset given the loss function, optimizer, and number of epochs.
 
@@ -50,5 +51,8 @@ def train(model: nn.Module,
         
         epoch_loss = total_loss / len(trainloader.dataset)
         print(f'Epoch {epoch + 1}, Loss {epoch_loss:.15f}')
+
+        if scheduler is not None:
+            scheduler.step(epoch_loss)
     
     return model, epoch_loss

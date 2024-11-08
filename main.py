@@ -4,7 +4,6 @@ from torchvision import transforms
 from datasets.busi import BUSI
 from models.vit import ViT
 import torch.optim as optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from timm.data import Mixup
 import numpy as np
 import random
@@ -80,4 +79,5 @@ if __name__ == '__main__':
           k=k,
           seed=seed,
           train_transform=train_transform,
-          val_transform=val_transform)
+          val_transform=val_transform,
+          scheduler=True)

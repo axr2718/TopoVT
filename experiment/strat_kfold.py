@@ -5,9 +5,9 @@ import numpy as np
 import copy
 from datasets.busi import BUSI
 from torch.utils.data import Subset
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from .test import test
 from .train import train
-from datasets.transform_dataset import TransformedDataset
 
 def compute_mean_std_err(metric_list: list) -> tuple[float, float]:
     """
@@ -34,7 +34,8 @@ def skfold(model: nn.Module,
           k: int,
           seed: int,
           train_transform=None,
-          val_transform=None):
+          val_transform=None,
+          scheduler=False):
     """
     Trains and evaluates a model using k-fold cross-validation.
 
@@ -68,6 +69,9 @@ def skfold(model: nn.Module,
         # Create subsets using the indices
         train_dataset = Subset(dataset=train_full_dataset, indices=train_idx)
         val_dataset = Subset(dataset=val_full_dataset, indices=val_idx)
+
+        if scheduler:
+            scheduler = scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 
         trained_model, _ = train(model=model,
                                 train_dataset=train_dataset,
