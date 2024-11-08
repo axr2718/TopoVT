@@ -60,8 +60,8 @@ def skfold(model: nn.Module,
     for fold, (train_idx, val_idx) in enumerate(skfold.split(np.zeros(len(labels)), labels)):
         print(f"Fold {fold + 1}")
 
-        train_full_dataset = BUSI('./data', transform=train_transform)
-        val_full_dataset = BUSI('./data', transform=val_transform)
+        train_full_dataset = BUSI('./data/busi', transform=train_transform)
+        val_full_dataset = BUSI('./data/busi', transform=val_transform)
 
         train_dataset = Subset(dataset=train_full_dataset, indices=train_idx)
         val_dataset = Subset(dataset=val_full_dataset, indices=val_idx)

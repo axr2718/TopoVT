@@ -33,6 +33,7 @@ if __name__ == '__main__':
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomRotation(degrees=30),
+        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
         transforms.RandomApply([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)], p=0.5),
         transforms.ToTensor(),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)), 
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     )
     ])
 
-    dataset = BUSI('./data', transform=val_transform)
+    dataset = BUSI('./data/busi', transform=val_transform)
     class_weights = BUSI.class_weights(dataset)
     class_weights = class_weights.to(device)
 

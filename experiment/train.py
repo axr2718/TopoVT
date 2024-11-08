@@ -33,13 +33,13 @@ def train(model: nn.Module,
                              shuffle=True, 
                              num_workers=2)
     
-    mixup = v2.MixUp(num_classes=len(train_dataset.dataset.classes))
+    #mixup = v2.MixUp(num_classes=len(train_dataset.dataset.classes))
 
 
     for epoch in range(epochs):
         total_loss = 0.0
         for images, labels in trainloader:
-            images, labels = mixup(images, labels)
+            #images, labels = mixup(images, labels)
             images = images.to(device)
             labels = labels.to(device)
 
