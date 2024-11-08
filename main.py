@@ -7,7 +7,6 @@ import torch.optim as optim
 from timm.data import Mixup
 import numpy as np
 import random
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from experiment.kfold import kfold
 from experiment.strat_kfold import skfold
 
@@ -53,13 +52,11 @@ if __name__ == '__main__':
     ])
 
     dataset = BUSI('./data', transform=val_transform)
-    
     class_weights = BUSI.class_weights(dataset)
     class_weights = class_weights.to(device)
 
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.AdamW(model.parameters(), lr=1e-5)
-    #scheduler = scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
     epochs = 100
     k = 5
 
@@ -73,5 +70,4 @@ if __name__ == '__main__':
           k=k,
           seed=seed,
           train_transform=train_transform,
-          val_transform=val_transform,
-          scheduler=None)
+          val_transform=val_transform)
