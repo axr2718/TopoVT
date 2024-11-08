@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from torchvision.transforms import v2
+from torch.optim.lr_scheduler import OneCycleLR
 
 def train(model: nn.Module,
           train_dataset: torch.utils.data.Dataset,
@@ -33,6 +34,11 @@ def train(model: nn.Module,
                              shuffle=True, 
                              num_workers=2)
     
+    steps_per_epoch = len(trainloader)
+    total_steps = epochs * steps_per_epoch
+
+    scheduler = OneCycleLR(optimizer, max_lr=1e-6, total_steps=total_steps)
+    
     mixup = v2.MixUp(num_classes=len(train_dataset.dataset.classes))
 
 
@@ -58,6 +64,6 @@ def train(model: nn.Module,
         print(f'Epoch {epoch + 1}, Loss {epoch_loss:.15f}')
 
         if scheduler is not None:
-            scheduler.step(epoch_loss)
+            scheduler.step()
     
     return model, epoch_loss

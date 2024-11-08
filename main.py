@@ -58,18 +58,10 @@ if __name__ == '__main__':
     class_weights = class_weights.to(device)
 
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-6)
-    scheduler = scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-5)
+    #scheduler = scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
     epochs = 100
     k = 5
-
-    mixup_fn = Mixup(mixup_alpha=0.2,
-                    cutmix_alpha=0.0,
-                    prob=1.0,
-                    switch_prob=0.5,
-                    mode='batch',
-                    label_smoothing=0.0,
-                    num_classes=3)
 
     print('Starting K-Fold Cross Validation')
     skfold(model=model, 
@@ -82,4 +74,4 @@ if __name__ == '__main__':
           seed=seed,
           train_transform=train_transform,
           val_transform=val_transform,
-          scheduler=scheduler)
+          scheduler=None)

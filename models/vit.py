@@ -13,7 +13,11 @@ class ViT(nn.Module):
     def __init__(self, model_name: str, num_classes: int, freeze: bool):
         super(ViT, self).__init__()
 
-        self.model = timm.create_model(model_name=model_name, pretrained=True)
+        self.model = timm.create_model(model_name=model_name, 
+                                       pretrained=True,
+                                       drop_rate=0.2,
+                                       drop_path_rate=0.2)
+        
         self.model.reset_classifier(num_classes)
 
         if freeze:
