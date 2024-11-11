@@ -11,22 +11,22 @@ class ViT(nn.Module):
         freeze (bool): Whether to freeze layers for training or not
     """
     def __init__(self, model_name: str, num_classes: int, freeze: bool):
-        super(ViT, self).__init__()
+        super().__init__()
 
-        self.model = timm.create_model(model_name=model_name, 
+        self.vit = timm.create_model(model_name=model_name, 
                                        pretrained=True,
                                        drop_rate=0.2,
                                        drop_path_rate=0.2)
         
-        self.model.reset_classifier(num_classes)
+        self.vit.reset_classifier(num_classes)
 
         if freeze:
-            for name, param in self.model.named_parameters():
+            for name, param in self.vit.named_parameters():
                 if 'head' not in name:
                     param.requires_grad = False
         else: 
-            for param in self.model.parameters():
+            for param in self.vit.parameters():
                 param.requires_grad = True
 
     def forward(self, x):
-        return self.model(x)
+        return self.vit(x)

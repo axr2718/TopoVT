@@ -2,50 +2,33 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
-from torchvision.transforms import v2
 
 def train(model: nn.Module,
           train_dataset: torch.utils.data.Dataset,
           criterion: nn.Module,
           optimizer: torch.optim.Optimizer,
           epochs: int,
-          device: torch.device,
-          scheduler=None) -> tuple[nn.Module, float]:
-    """
-    Trains a model on the dataset given the loss function, optimizer, and number of epochs.
-
-    Args:
-        model (nn.Module): The model to be trained.
-        train_dataset (Dataset): The dataset being used for training.
-        criterion (nn.Module): The loss function.
-        optimizer (Optimizer): Optimizer for training.
-        epochs (int): Number of epochs to be trained on.
-        device (device): Device that will train.
-
-    Returns:
-        tuple[nn.Module, float]: The trained model and the (optional) final loss.
-    """
+          device: torch.device) -> tuple[nn.Module, float]:
     
     model.train()
 
     trainloader = DataLoader(train_dataset, 
-                             batch_size=128, 
+                             batch_size=32, 
                              shuffle=True, 
-                             num_workers=2)
-    
-    #mixup = v2.MixUp(num_classes=len(train_dataset.dataset.classes))
+                             num_workers=6)
 
 
     for epoch in range(epochs):
         total_loss = 0.0
-        for images, labels in trainloader:
-            #images, labels = mixup(images, labels)
+        for images, b0, b1, labels in trainloader:
             images = images.to(device)
+            b0 = b0.to(device)
+            b1 = b1.to(device)
             labels = labels.to(device)
 
             optimizer.zero_grad()
 
-            outputs = model(images)
+            outputs = model(images, b0, b1)
             loss = criterion(outputs, labels)
 
             loss.backward()

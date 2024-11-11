@@ -1,10 +1,13 @@
-import torch
+from sklearn.model_selection import StratifiedKFold
 import torch.nn as nn
-from torch.utils.data import Dataset, Subset, ConcatDataset
-import copy
+import torch
 import numpy as np
-from .train import train
-from .test import test
+import copy
+from datasets.busi import BUSI
+from torch.utils.data import Subset
+from topo_experiment.topo_test import test
+from topo_experiment.topo_train import train
+from datasets.topo_transform import TopoTransformDataset
 
 def compute_mean_std_err(metric_list: list) -> tuple[float, float]:
     """
@@ -22,41 +25,18 @@ def compute_mean_std_err(metric_list: list) -> tuple[float, float]:
 
     return mean, std_err
 
-def _kfolds(dataset: Dataset, len_dataset: int, k: int) -> list[Dataset]:
-    """
-    Returns a list of k-flolds.
-
-    Args:
-        dataset (Dataset): Dataset to be split.
-        len_dataset (int): Length of the dataset.
-
-    Returns:
-        list[Dataset]: A list of all the k-folds in the form of PyTorch Dataset.
-    """
-
-    length = len_dataset
-    indices = torch.randperm(length).tolist()
-
-    fold_sizes = [length // k] * k
-    for i in range(length % k):
-        fold_sizes[i] += 1
-
-    folds = []
-    current = 0
-    for fold_size in fold_sizes:
-        start, stop = current, current + fold_size
-        folds.append(Subset(dataset, indices[start:stop]))
-        current = stop
-
-    return folds
-
-def kfold(model: nn.Module,
-          dataset: Dataset,
+def skfold(model: nn.Module,
+          image_dataset: torch.utils.data.Dataset,
+          b0_dataset,
+          b1_dataset,
           criterion: nn.Module,
           optimizer: torch.optim.Optimizer,
           epochs: int,
           device: torch.device,
-          k: int):
+          k: int,
+          seed: int,
+          train_transform=None,
+          val_transform=None):
     """
     Trains and evaluates a model using k-fold cross-validation.
 
@@ -68,13 +48,8 @@ def kfold(model: nn.Module,
         epochs (int): Number of epochs to be trained on.
         device (device): Device that will train.
     """
-
-    len_dataset = len(dataset)
-
-    kfolds = _kfolds(dataset=dataset, len_dataset=len_dataset, k=k)
-
-    initial_model_state = copy.deepcopy(model.state_dict())
-    initial_optimizer_state = copy.deepcopy(optimizer.state_dict())
+    labels = np.array(image_dataset.labels)
+    skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
 
     accuracy_list = []
     precision_list = []
@@ -82,32 +57,39 @@ def kfold(model: nn.Module,
     f1_list = []
     roc_auc_list = []
 
-    for fold in range(len(kfolds)):
+    initial_model_state = copy.deepcopy(model.state_dict())
+    initial_optimizer_state = copy.deepcopy(optimizer.state_dict())
 
-        print(f"Fold = {fold + 1}")
-        val_fold = kfolds[fold]
+    train_dataset = TopoTransformDataset(image_dataset, b0_dataset, b1_dataset, train_transform)
+    val_dataset = TopoTransformDataset(image_dataset, b0_dataset, b1_dataset, val_transform)
 
-        train_folds = kfolds[:fold] + kfolds[fold + 1:]
-        train_fold = ConcatDataset(train_folds)
+    for fold, (train_idx, val_idx) in enumerate(skfold.split(np.zeros(len(labels)), labels)):
+        print(f"Fold {fold + 1}")
 
-        trained_model, _ = train(model=model, 
-                                 train_dataset=train_fold, 
-                                 criterion=criterion, 
-                                 optimizer=optimizer, 
-                                 epochs=epochs, 
-                                 device=device)
-        
-        metrics = test(model=trained_model, 
-                       test_dataset=val_fold, 
-                       device=device)
-        
+        train_folds = Subset(dataset=train_dataset, indices=train_idx)
+        val_fold = Subset(dataset=val_dataset, indices=val_idx)
+
+
+        trained_model, _ = train(model=model,
+                                train_dataset=train_folds,
+                                criterion=criterion,
+                                optimizer=optimizer,
+                                epochs=epochs,
+                                device=device)
+
+        metrics = test(model=trained_model,
+                        test_dataset=val_fold,
+                        device=device)
+
         accuracy_list.append(metrics['accuracy'])
         precision_list.append(metrics['precision'])
         recall_list.append(metrics['recall'])
         f1_list.append(metrics['f1'])
         roc_auc_list.append(metrics['roc_auc'])
 
-        print(f"Fold {fold + 1} Metrics: Accuracy={metrics['accuracy']:.4f}, Precision={metrics['precision']:.4f}, Recall={metrics['recall']:.4f}, F1={metrics['f1']:.4f}")
+        print(f"Fold {fold + 1} Metrics: Accuracy={metrics['accuracy']:.4f}, "
+              f"Precision={metrics['precision']:.4f}, Recall={metrics['recall']:.4f}, "
+              f"F1={metrics['f1']:.4f}, ROC-AUC={metrics['roc_auc']:.4f}")
 
         model.load_state_dict(initial_model_state)
         optimizer.load_state_dict(initial_optimizer_state)
@@ -117,6 +99,7 @@ def kfold(model: nn.Module,
     recall_mean, recall_std_err = compute_mean_std_err(recall_list)
     f1_mean, f1_std_err = compute_mean_std_err(f1_list)
     roc_auc_mean, roc_auc_std_err = compute_mean_std_err(roc_auc_list)
+
 
     print("\nFinal Metrics Across All Folds:")
     print(f"Accuracy: Mean={accuracy_mean:.4f}, StdErr={accuracy_std_err:.4f}")

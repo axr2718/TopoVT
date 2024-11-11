@@ -4,9 +4,9 @@ from PIL import Image
 from torch.utils.data import Dataset
 import numpy as np
 
-class BUSI(Dataset):
+class BusBra(Dataset):
     """
-    Dataset class for the BUSI dataset.
+    Dataset class for the BusBra dataset.
 
     Args:
         dir (str): Name of the directory containing all the images.
@@ -15,7 +15,7 @@ class BUSI(Dataset):
     def __init__(self, dir: str, transform: bool = None) -> Dataset:
         self.transform = transform
         self.dir = dir
-        self.classes = ['normal', 'benign', 'malignant']
+        self.classes = ['benign', 'malignant']
         self.class_to_idx = {class_name: idx for idx, class_name in enumerate(self.classes)}
         self.img_paths = []
         self.labels = []

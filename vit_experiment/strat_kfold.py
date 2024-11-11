@@ -7,6 +7,7 @@ from datasets.busi import BUSI
 from torch.utils.data import Subset
 from .test import test
 from .train import train
+from datasets.transform import TransformDataset
 
 def compute_mean_std_err(metric_list: list) -> tuple[float, float]:
     """
@@ -57,25 +58,25 @@ def skfold(model: nn.Module,
     initial_model_state = copy.deepcopy(model.state_dict())
     initial_optimizer_state = copy.deepcopy(optimizer.state_dict())
 
+    train_dataset = TransformDataset(dataset, train_transform)
+    val_dataset = TransformDataset(dataset, val_transform)
+
     for fold, (train_idx, val_idx) in enumerate(skfold.split(np.zeros(len(labels)), labels)):
         print(f"Fold {fold + 1}")
 
-        train_full_dataset = BUSI('./data/busi', transform=train_transform)
-        val_full_dataset = BUSI('./data/busi', transform=val_transform)
-
-        train_dataset = Subset(dataset=train_full_dataset, indices=train_idx)
-        val_dataset = Subset(dataset=val_full_dataset, indices=val_idx)
+        train_folds = Subset(dataset=train_dataset, indices=train_idx)
+        val_fold = Subset(dataset=val_dataset, indices=val_idx)
 
 
         trained_model, _ = train(model=model,
-                                train_dataset=train_dataset,
+                                train_dataset=train_folds,
                                 criterion=criterion,
                                 optimizer=optimizer,
                                 epochs=epochs,
                                 device=device)
 
         metrics = test(model=trained_model,
-                        test_dataset=val_dataset,
+                        test_dataset=val_fold,
                         device=device)
 
         accuracy_list.append(metrics['accuracy'])

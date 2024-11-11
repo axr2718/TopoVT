@@ -4,11 +4,15 @@ from torchvision import transforms
 from datasets.busi import BUSI
 from models.vit import ViT
 import torch.optim as optim
-from timm.data import Mixup
 import numpy as np
 import random
-from experiment.kfold import kfold
-from experiment.strat_kfold import skfold
+from vit_experiment.strat_kfold import skfold
+from utils.class_weights import class_weight
+
+from datasets.betti import BettiDataset
+from datasets.topo import TopoDataset
+from models.topovit import TopoViT
+from models.betti_encoder import BettiEncoder
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -25,36 +29,34 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = ViT(model_name='vit_base_patch16_224', num_classes=3, freeze=False)
-    model = model.to(device)
+    train_transform = transforms.Compose([transforms.Resize((224, 224)),
+                                          transforms.RandomHorizontalFlip(p=0.5),
+                                          transforms.RandomVerticalFlip(p=0.5),
+                                          transforms.RandomRotation(degrees=30),
+                                          transforms.RandomApply([transforms.ColorJitter(brightness=0.2, 
+                                                                                         contrast=0.2, 
+                                                                                         saturation=0.2, 
+                                                                                         hue=0.1)], p=0.5),
+                                          transforms.ToTensor(),
+                                          transforms.GaussianBlur(kernel_size=(5, 9), 
+                                                                  sigma=(0.1, 5)), 
+                                          transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                                               std=[0.5, 0.5, 0.5])])
 
-    train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
-        transforms.RandomRotation(degrees=30),
-        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
-        transforms.RandomApply([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)], p=0.5),
-        transforms.ToTensor(),
-        transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)), 
-        transforms.Normalize(
-            mean=[0.5, 0.5, 0.5],
-            std=[0.5, 0.5, 0.5]
-        )
-    ])
+    val_transform = transforms.Compose([transforms.Resize((224, 224)),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                                             std=[0.5, 0.5, 0.5])])
 
-    val_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.5, 0.5, 0.5],
-        std=[0.5, 0.5, 0.5]
-    )
-    ])
-
-    dataset = BUSI('./data/busi', transform=val_transform)
-    class_weights = BUSI.class_weights(dataset)
+    dataset = BUSI('./data/busi', transform=None)
+    class_weights = class_weight(dataset)
     class_weights = class_weights.to(device)
+
+    num_classes = len(dataset.classes)
+
+    model_name = 'vit_base_patch16_224'
+    model = ViT(model_name=model_name, num_classes=num_classes, freeze=False)
+    model = model.to(device)
 
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.AdamW(model.parameters(), lr=1e-5)

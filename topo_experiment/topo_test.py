@@ -27,20 +27,22 @@ def test(model: nn.Module,
     model.eval()
 
     testloader = DataLoader(dataset=test_dataset, 
-                            batch_size=128, 
+                            batch_size=32, 
                             shuffle=False, 
-                            num_workers=2)
+                            num_workers=6)
     
     all_labels = []
     all_probabilities = []
     all_predictions = []
     
     with torch.no_grad():
-        for images, labels in testloader:
+        for images, b0, b1, labels in testloader:
             images = images.to(device)
+            b0 = b0.to(device)
+            b1 = b1.to(device)
             labels = labels.to(device)
 
-            outputs = model(images)
+            outputs = model(images, b0, b1)
             probabilities = F.softmax(outputs, dim=1)
 
             _, predictions = torch.max(outputs, 1)
@@ -53,11 +55,17 @@ def test(model: nn.Module,
     all_probabilities = np.concatenate(all_probabilities, axis=0)
     all_predictions = np.array(all_predictions)
 
+    num_classes = all_probabilities.shape[1]
+
     accuracy = accuracy_score(all_labels, all_predictions)
     precision = precision_score(all_labels, all_predictions, average='macro', zero_division=0)
     recall = recall_score(all_labels, all_predictions, average='macro', zero_division=0)
     f1 = f1_score(all_labels, all_predictions, average='macro', zero_division=0)
-    roc_auc = roc_auc_score(all_labels, all_probabilities, multi_class='ovr', average='macro')
+
+    if num_classes == 2:
+        roc_auc = roc_auc_score(all_labels, all_probabilities[:, 1])
+    else:
+        roc_auc = roc_auc_score(all_labels, all_probabilities, multi_class='ovr', average='macro')
 
     metrics = {
         'accuracy': accuracy,
