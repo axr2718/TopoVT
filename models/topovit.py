@@ -69,6 +69,8 @@ class TopoViT(nn.Module):
                                      pretrained=True, 
                                      num_classes=0)
         
+        self.vit.reset_classifier(num_classes)
+        
         vit_dim = self.vit.embed_dim
 
         self.b0_encoder = BettiEncoder(seq_len=100, d_model=betti_dim)
@@ -80,12 +82,12 @@ class TopoViT(nn.Module):
 
         self.cross_attention = CrossAttention(dim=vit_dim)
 
-        self.norm = nn.LayerNorm(vit_dim)
+        # self.norm = nn.LayerNorm(vit_dim)
 
-        self.classifier = nn.Sequential(nn.Linear(vit_dim, vit_dim),
-                                        nn.GELU(),
-                                        nn.Dropout(0.1),
-                                        nn.Linear(vit_dim, num_classes))
+        # self.classifier = nn.Sequential(nn.Linear(vit_dim, vit_dim),
+        #                                 nn.GELU(),
+        #                                 nn.Dropout(0.1),
+        #                                 nn.Linear(vit_dim, num_classes))
         
     def forward(self, img, betti0, betti1):
         vit_features = self.vit.forward_features(img)
@@ -97,7 +99,7 @@ class TopoViT(nn.Module):
             b0_features = self.betti_projection(b0_features)
             b1_features = self.betti_projection(b1_features)
 
-        vit_features = self.norm(vit_features)
+        #vit_features = self.norm(vit_features)
 
         attention_out = self.cross_attention(vit_features,
                                              b0_features,
@@ -105,6 +107,8 @@ class TopoViT(nn.Module):
         
         vit_features = vit_features + attention_out
 
-        x = vit_features.mean(dim=1)
+        #x = vit_features.mean(dim=1)
 
-        return self.classifier(x)
+        #return self.classifier(x)
+
+        return self.vit.forward_head(vit_features)
