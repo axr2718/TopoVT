@@ -27,7 +27,7 @@ def test(model: nn.Module,
     model.eval()
 
     testloader = DataLoader(dataset=test_dataset, 
-                            batch_size=32, 
+                            batch_size=64, 
                             shuffle=False, 
                             num_workers=6)
     
@@ -61,7 +61,7 @@ def test(model: nn.Module,
     f1 = f1_score(all_labels, all_predictions, average='macro', zero_division=0)
     
     if num_classes == 2:
-        metrics['roc_auc'] = roc_auc_score(all_labels, all_probabilities[:, 1])
+        roc_auc = roc_auc_score(all_labels, all_probabilities[:, 1])
     else:
         roc_auc = roc_auc_score(all_labels, all_probabilities, multi_class='ovr', average='macro')
 

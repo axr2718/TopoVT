@@ -1,55 +1,80 @@
-import torch
 import torch.nn as nn
-import math
-
-class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, max_len):
-        super().__init__()
-
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float32) *
-                             (-math.log(10000.0) / d_model))
-        
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-
-        pe = pe.unsqueeze(0)
-
-        self.register_buffer('pe', pe)
-
-    def forward(self, x):
-        return x + self.pe[:, :x.size(1), :]
-    
+import torch
 
 class BettiEncoder(nn.Module):
-    def __init__(self,
-                 seq_len,
-                 d_model=256,
-                 nhead=8,
-                 num_layers=4,
-                 dim_feedforward=1024):
+    def __init__(self, 
+                 seq_length: int = 100,
+                 d_model: int = 32,
+                 nhead: int = 2,
+                 num_layers: int = 1,
+                 dim_feedforward: int = 128,
+                 dropout: float = 0.1):
         super().__init__()
-
-        self.input_embedding = nn.Linear(1, d_model)
-
-        self.position_encoder = PositionalEncoding(d_model=d_model, max_len=seq_len)
-
-        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model,
-                                                   nhead=nhead,
-                                                   dim_feedforward=dim_feedforward,
-                                                   batch_first=True,
-                                                   dropout=0)
         
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer=encoder_layer,
-                                                         num_layers=num_layers,
-                                                         norm=nn.LayerNorm(d_model))
+        self.input_norm = nn.LayerNorm(seq_length)
+        self.input_embedding = nn.Linear(1, d_model)
+        self.pos_embedding = nn.Parameter(torch.randn(1, seq_length, d_model))
+        
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            activation="relu",
+            batch_first=True
+        )
+        
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer=encoder_layer,
+            num_layers=num_layers
+        )
         
     def forward(self, x):
+        x = self.input_norm(x)
         x = x.unsqueeze(-1)
         x = self.input_embedding(x)
-        x = self.position_encoder(x)
+        x = x + self.pos_embedding
+        x = self.transformer_encoder(x)
+        return x
 
-        encoded = self.transformer_encoder(x)
-
-        return encoded
+class BettiClassifier(nn.Module):
+    def __init__(self, 
+                 seq_length: int = 100,
+                 d_model: int = 256,  
+                 nhead: int = 4,      
+                 num_layers: int = 4,  
+                 dim_feedforward: int = 256,  
+                 dropout: float = 0.1,
+                 num_classes: int = 3):
+        super().__init__()
+        
+        self.encoder = BettiEncoder(
+            seq_length=seq_length,
+            d_model=d_model,
+            nhead=nhead,
+            num_layers=num_layers,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout
+        )
+        
+        self.pool = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
+            nn.Dropout(dropout) 
+        )
+        
+        
+        self.classifier = nn.Sequential(
+            nn.Linear(d_model, d_model),
+            nn.LayerNorm(d_model), 
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, num_classes)
+        )
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        
+        x = self.encoder(x)  
+        x = x.transpose(1, 2)  
+        x = self.pool(x)  
+        x = x.squeeze(-1) 
+        x = self.classifier(x) 

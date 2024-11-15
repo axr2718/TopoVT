@@ -1,21 +1,18 @@
 import torch
 import torch.nn as nn
 from torchvision import transforms
-from datasets.busi import BUSI
-from models.vit import ViT
+from datasets import (busbra, busi, mendeley)
+from models.swin import Swin
 import torch.optim as optim
 import numpy as np
 import random
-from vit_experiment.strat_kfold import skfold
+from swin_experiment.strat_kfold import skfold
 from utils.class_weights import class_weight
 
-from datasets.betti import BettiDataset
-from datasets.topo import TopoDataset
-from models.topovit import TopoViT
-from models.betti_encoder import BettiEncoder
 
 def set_seed(seed):
     torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
@@ -29,7 +26,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    train_transform = transforms.Compose([transforms.Resize((224, 224)),
+    train_transform = transforms.Compose([transforms.Resize((256, 256)),
                                           transforms.RandomHorizontalFlip(p=0.5),
                                           transforms.RandomVerticalFlip(p=0.5),
                                           transforms.RandomRotation(degrees=30),
@@ -43,23 +40,22 @@ if __name__ == '__main__':
                                           transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                                                std=[0.5, 0.5, 0.5])])
 
-    val_transform = transforms.Compose([transforms.Resize((224, 224)),
+    val_transform = transforms.Compose([transforms.Resize((256, 256)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                                              std=[0.5, 0.5, 0.5])])
 
-    dataset = BUSI('./data/busi', transform=None)
+    dataset = busi.BUSI('./data/busi',dataset_num=2, transform=None)
     class_weights = class_weight(dataset)
     class_weights = class_weights.to(device)
 
     num_classes = len(dataset.classes)
 
-    model_name = 'vit_base_patch16_224'
-    model = ViT(model_name=model_name, num_classes=num_classes, freeze=False)
+    model = Swin(num_classes=num_classes)
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-5)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.9)
     epochs = 100
     k = 5
 

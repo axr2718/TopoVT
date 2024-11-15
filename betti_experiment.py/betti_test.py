@@ -4,46 +4,28 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import numpy as np
 from sklearn.metrics import (accuracy_score,
-                           precision_score,
-                           recall_score,
-                           f1_score,
-                           roc_auc_score)
+                     precision_score,
+                     recall_score,
+                     f1_score,
+                     roc_auc_score)
 
-def test(model: nn.Module, 
-         test_dataset: torch.utils.data.Dataset, 
-         device: torch.device) -> dict:
-    """
-    Tests the performance of a TopoSwin model.
-
-    Args:
-        model (nn.Module): The model to be tested on.
-        test_dataset (Dataset): The dataset to test on (TopoTransformDataset).
-        device (device): The device for testing.
-        
-    Returns:
-        dict: A dictionary containing the metrics.
-    """
-
+def test(model, test_dataset, device):
     model.eval()
-
     testloader = DataLoader(dataset=test_dataset, 
-                          batch_size=64,  
+                          batch_size=len(test_dataset), 
                           shuffle=False, 
-                          num_workers=6,
-                          pin_memory=True)
+                          num_workers=6)
     
     all_labels = []
     all_probabilities = []
     all_predictions = []
     
     with torch.no_grad():
-        for img, b0, b1, labels in testloader:
-            img = img.to(device)
-            b0 = b0.to(device)
-            b1 = b1.to(device)
+        for vectors, labels in testloader:  
+            vectors = vectors.to(device)    
             labels = labels.to(device)
 
-            outputs = model(img, b0, b1)
+            outputs = model(vectors)        
             probabilities = F.softmax(outputs, dim=1)
 
             _, predictions = torch.max(outputs, 1)
@@ -51,7 +33,7 @@ def test(model: nn.Module,
             all_labels.extend(labels.cpu().numpy())
             all_probabilities.append(probabilities.cpu().numpy())
             all_predictions.extend(predictions.cpu().numpy())
-        
+
     all_labels = np.array(all_labels)
     all_probabilities = np.concatenate(all_probabilities, axis=0)
     all_predictions = np.array(all_predictions)

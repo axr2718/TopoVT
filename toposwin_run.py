@@ -1,17 +1,19 @@
 import torch
 import torch.nn as nn
 from torchvision import transforms
-from datasets.busi import BUSI
+from datasets import (busi, busbra, mendeley)
 from datasets.betti import BettiDataset
-from models.topovit import TopoViT
+from models.toposwin import TopoSwin
 import torch.optim as optim
 import numpy as np
 import random
 from topo_experiment.topo_strat_kfold import skfold
 from utils.class_weights import class_weight
 
+
 def set_seed(seed):
     torch.manual_seed(seed)
+    #torch.cuda.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
@@ -23,22 +25,20 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Create datasets
-    image_dataset = BUSI('./data/busi', transform=None)  # Base dataset without transforms
-    b0_dataset = BettiDataset('./data/busi/busi_betti0.xlsx')
-    b1_dataset = BettiDataset('./data/busi/busi_betti1.xlsx')
+    image_dataset = mendeley.Mendeley('./data/mendeley', transform=None)
+    b0_dataset = BettiDataset('./data/mendeley/mendeley_betti0.xlsx')
+    b1_dataset = BettiDataset('./data/mendeley/mendeley_betti1.xlsx')
 
-    # Get class weights
+    num_classes = len(image_dataset.classes)
+
     class_weights = class_weight(image_dataset)
     class_weights = class_weights.to(device)
 
-    # Create model
-    model = TopoViT(model_name='vit_base_patch16_224', num_classes=3)
+    model = TopoSwin(num_classes=num_classes)
     model = model.to(device)
 
-    # Define transforms
     train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((256, 256)),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomRotation(degrees=30),
@@ -53,19 +53,18 @@ if __name__ == '__main__':
     ])
 
     val_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((256, 256)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5],
                            std=[0.5, 0.5, 0.5])
     ])
 
-    # Setup training
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.AdamW(model.parameters(), lr=1e-5)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.9)
     epochs = 100
     k = 5
 
-    print('Starting K-Fold Cross Validation for TopoViT')
+    print('Starting K-Fold Cross Validation for TopoSwin')
     skfold(
         model=model,
         image_dataset=image_dataset,

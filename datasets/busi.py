@@ -12,10 +12,13 @@ class BUSI(Dataset):
         dir (str): Name of the directory containing all the images.
         transform (callable, optional): Transforms to be applied to data.
     """
-    def __init__(self, dir: str, transform: bool = None) -> Dataset:
+    def __init__(self, dir: str, dataset_num, transform: bool = None) -> Dataset:
         self.transform = transform
         self.dir = dir
-        self.classes = ['normal', 'benign', 'malignant']
+
+        if (dataset_num == 3):
+            self.classes = ['normal', 'benign', 'malignant']
+        else: self.classes = ['benign', 'malignant']
         self.class_to_idx = {class_name: idx for idx, class_name in enumerate(self.classes)}
         self.img_paths = []
         self.labels = []
