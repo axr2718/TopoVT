@@ -3,6 +3,7 @@ import torch.nn as nn
 from torchvision import transforms
 from datasets import (busi, busbra, mendeley)
 from datasets.betti import BettiDataset
+from datasets.busi2_betti import Betti2Dataset
 from models.toposwin import TopoSwin
 import torch.optim as optim
 import numpy as np
@@ -13,7 +14,7 @@ from utils.class_weights import class_weight
 
 def set_seed(seed):
     torch.manual_seed(seed)
-    #torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
@@ -25,9 +26,10 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    image_dataset = mendeley.Mendeley('./data/mendeley', transform=None)
-    b0_dataset = BettiDataset('./data/mendeley/mendeley_betti0.xlsx')
-    b1_dataset = BettiDataset('./data/mendeley/mendeley_betti1.xlsx')
+    image_dataset = busbra.BusBra('./data/busbra')
+
+    b0_dataset = BettiDataset('./data/busbra/busbra_betti0.xlsx')
+    b1_dataset = BettiDataset('./data/busbra/busbra_betti1.xlsx')
 
     num_classes = len(image_dataset.classes)
 

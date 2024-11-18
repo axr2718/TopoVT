@@ -38,30 +38,24 @@ class TopoSwin(nn.Module):
         super().__init__()
         
 
-        self.swin = timm.create_model(
-            'swinv2_base_window16_256.ms_in1k',
-            pretrained=True,
-            features_only=True,
-            out_indices=(0, 1, 2, 3)
-        )
+        self.swin = timm.create_model('swinv2_base_window16_256.ms_in1k',
+                                      pretrained=True,
+                                      features_only=True,
+                                      out_indices=(0, 1, 2, 3))
         
         self.feature_dims = self.swin.feature_info.channels()
 
-        self.b0_encoder = BettiEncoder(
-            seq_length=100,
-            d_model=512,
-            nhead=4,
-            num_layers=4,
-            dim_feedforward=256
-        )
+        self.b0_encoder = BettiEncoder(seq_length=100,
+                                       d_model=512,
+                                       nhead=4,
+                                       num_layers=4,
+                                       dim_feedforward=256)
         
-        self.b1_encoder = BettiEncoder(
-            seq_length=100,
-            d_model=512,
-            nhead=4,
-            num_layers=4,
-            dim_feedforward=256
-        )
+        self.b1_encoder = BettiEncoder(seq_length=100,
+                                       d_model=512,
+                                       nhead=4,
+                                       num_layers=4,
+                                       dim_feedforward=256)
         
         self.b0_proj_layers = nn.ModuleList()
         self.b1_proj_layers = nn.ModuleList()
@@ -71,19 +65,15 @@ class TopoSwin(nn.Module):
         self.norm2_layers = nn.ModuleList()
         
         for dim in self.feature_dims:
-            self.b0_proj_layers.append(nn.Sequential(
-                nn.Linear(512, dim),
-                nn.LayerNorm(dim),
-                nn.ReLU(),
-                nn.Dropout(0.1)
-            ))
+            self.b0_proj_layers.append(nn.Sequential(nn.Linear(512, dim),
+                                       nn.LayerNorm(dim),
+                                       nn.ReLU(),
+                                       nn.Dropout(0.1)))
             
-            self.b1_proj_layers.append(nn.Sequential(
-                nn.Linear(512, dim),
-                nn.LayerNorm(dim),
-                nn.ReLU(),
-                nn.Dropout(0.1)
-            ))
+            self.b1_proj_layers.append(nn.Sequential(nn.Linear(512, dim),
+                                       nn.LayerNorm(dim),
+                                       nn.ReLU(),
+                                       nn.Dropout(0.1)))
             
             self.cross_attn_b0_layers.append(CrossAttention(dim, num_heads=8))
             self.cross_attn_b1_layers.append(CrossAttention(dim, num_heads=8))
@@ -106,7 +96,6 @@ class TopoSwin(nn.Module):
         
         for i, feat in enumerate(features):
             H, W, C = feat.shape[1], feat.shape[2], feat.shape[3]
-            assert C == self.feature_dims[i], f"Feature dimension mismatch at stage {i}: {C} vs {self.feature_dims[i]}"
         
             feat = feat.reshape(B, H*W, C)  
             

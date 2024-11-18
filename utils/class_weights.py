@@ -3,6 +3,9 @@ import numpy as np
 import torch
 
 def class_weight(dataset: Dataset):
+        """
+        Computes the weight of each class to give more weight to lower distributed classes.
+        """
         labels = np.array(dataset.labels)
         class_counts = np.bincount(labels)
         total_samples = len(labels)

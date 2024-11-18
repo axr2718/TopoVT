@@ -37,14 +37,6 @@ def skfold(model: nn.Module,
           val_transform=None):
     """
     Trains and evaluates a model using k-fold cross-validation.
-
-    Args:
-        model (nn.Module): The model to be trained.
-        dataset (Dataset): The dataset being used for training.
-        criterion (nn.Module): The loss function.
-        optimizer (Optimizer): Optimizer for training.
-        epochs (int): Number of epochs to be trained on.
-        device (device): Device that will train.
     """
     labels = np.array(dataset.labels)
     skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
@@ -69,15 +61,15 @@ def skfold(model: nn.Module,
 
 
         trained_model, _ = train(model=model,
-                                train_dataset=train_folds,
-                                criterion=criterion,
-                                optimizer=optimizer,
-                                epochs=epochs,
-                                device=device)
+                                 train_dataset=train_folds,
+                                 criterion=criterion,
+                                 optimizer=optimizer,
+                                 epochs=epochs,
+                                 device=device)
 
         metrics = test(model=trained_model,
-                        test_dataset=val_fold,
-                        device=device)
+                       test_dataset=val_fold,
+                       device=device)
 
         accuracy_list.append(metrics['accuracy'])
         precision_list.append(metrics['precision'])

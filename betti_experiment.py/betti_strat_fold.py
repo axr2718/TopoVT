@@ -34,7 +34,7 @@ def skfold(model: nn.Module,
           k: int,
           seed: int):
     """
-    Trains and evaluates a model using k-fold cross-validation.
+    Trains and evaluates a model using stratified k-fold cross-validation.
 
     Args:
         model (nn.Module): The model to be trained.
@@ -43,6 +43,8 @@ def skfold(model: nn.Module,
         optimizer (Optimizer): Optimizer for training.
         epochs (int): Number of epochs to be trained on.
         device (device): Device that will train.
+        k (int): k-fold splits
+        seed (int): Seed number
     """
     labels = np.array(dataset.labels)
     skfold = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)

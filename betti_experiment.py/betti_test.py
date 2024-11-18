@@ -10,6 +10,18 @@ from sklearn.metrics import (accuracy_score,
                      roc_auc_score)
 
 def test(model, test_dataset, device):
+    """
+    Tests a model on a given dataset.
+
+    Args:
+        model (nn.Module): The model to be tested on.
+        test_dataset (Dataset): The dataset the model will be tested on.
+        device (torch.device): Device the model and dataset will be on.
+
+    Returns:
+        metrics (dict): A dictionary contaning all the metrics of the evaluation.
+    """
+
     model.eval()
     testloader = DataLoader(dataset=test_dataset, 
                           batch_size=len(test_dataset), 

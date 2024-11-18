@@ -71,15 +71,15 @@ def skfold(model: nn.Module,
 
 
         trained_model, _ = train(model=model,
-                                train_dataset=train_folds,
-                                criterion=criterion,
-                                optimizer=optimizer,
-                                epochs=epochs,
-                                device=device)
+                                 train_dataset=train_folds,
+                                 criterion=criterion,
+                                 optimizer=optimizer,
+                                 epochs=epochs,
+                                 device=device)
 
         metrics = test(model=trained_model,
-                        test_dataset=val_fold,
-                        device=device)
+                       test_dataset=val_fold,
+                       device=device)
 
         accuracy_list.append(metrics['accuracy'])
         precision_list.append(metrics['precision'])

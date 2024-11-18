@@ -5,13 +5,6 @@ from torch.utils.data import Dataset
 import numpy as np
 
 class Mendeley(Dataset):
-    """
-    Dataset class for the Mendeley dataset.
-
-    Args:
-        dir (str): Name of the directory containing all the images.
-        transform (callable, optional): Transforms to be applied to data.
-    """
     def __init__(self, dir: str, transform: bool = None) -> Dataset:
         self.transform = transform
         self.dir = dir

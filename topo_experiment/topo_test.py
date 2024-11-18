@@ -27,10 +27,10 @@ def test(model: nn.Module,
     model.eval()
 
     testloader = DataLoader(dataset=test_dataset, 
-                          batch_size=64,  
-                          shuffle=False, 
-                          num_workers=6,
-                          pin_memory=True)
+                            batch_size=64,  
+                            shuffle=False, 
+                            num_workers=6,
+                            pin_memory=True)
     
     all_labels = []
     all_probabilities = []

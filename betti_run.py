@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from datasets.betti import BettiDataset
+from datasets.busi2_betti import Betti2Dataset
 from models.betti_encoder import BettiClassifier
 import torch.optim as optim
 import numpy as np
@@ -25,23 +26,25 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    b0_dataset = BettiDataset('./data/busbra/busbra_betti0.xlsx')
-    b1_dataset = BettiDataset('./data/busbra/busbra_betti1.xlsx')
+    b0_dataset = BettiDataset('./data/busi/busi_betti0.xlsx')
+    b1_dataset = BettiDataset('./data/busi/busi_betti1.xlsx')
+    
     class_weights = class_weight(b0_dataset)
     class_weights = class_weights.to(device)
 
     num_classes = len(b0_dataset.classes)
 
     epochs = 100
-    k = 5
+    k = 10
 
     print('\nTraining Betti-0 Classifier')
+
     
     b0_model = BettiClassifier(num_classes=num_classes)
     b0_model = b0_model.to(device)
     
     b0_criterion = nn.CrossEntropyLoss(weight=class_weights)
-    b0_optimizer = optim.Adam(b0_model.parameters(), lr=1e-3)
+    b0_optimizer = optim.AdamW(b0_model.parameters(), lr=1e-4, weight_decay=0.9)
     
     skfold(model=b0_model, 
            dataset=b0_dataset, 
@@ -58,7 +61,7 @@ if __name__ == '__main__':
     b1_model = b1_model.to(device)
     
     b1_criterion = nn.CrossEntropyLoss(weight=class_weights)
-    b1_optimizer = optim.Adam(b1_model.parameters(), lr=1e-4)
+    b1_optimizer = optim.AdamW(b1_model.parameters(), lr=1e-4, weight_decay=0.9)
     
     skfold(model=b1_model, 
            dataset=b1_dataset, 
