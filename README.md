@@ -1,7 +1,7 @@
 # Topo-VT
 
 ## Paper
-Implementation of "Topology Meets Deep Learning for Breast Cancer Detection" using PyTorch. Submitted to CVPR (Under Review), 2025.
+Implementation of REDACTED using PyTorch. Submitted to CVPR (Under Review), 2025.
 
 ## Method
 Uses the betti vectors $B_0$, which correspond to components of cubical filtration in images, and $B_1$, which correspond to loops of cubical filtration in images, in the vision transformer SwinV2 to increase generalization. This works by creating transformer encoders for the betti vectors, both of which are independent, then applying cross-attention between all the layers of SwinV2 and the transformer encoder of betti vector embeddings. 
